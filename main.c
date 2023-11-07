@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "time.h"
-
+#include "regex.h"
+#include <stdlib.h>
 
 typedef struct transaction{
     float amount;
@@ -92,6 +93,23 @@ void calculate_account_balance(struct transaction v[], int records){
     printf("Your current account balance is: %g", balance);
 }
 
+int validate_date(char s[]){
+    regex_t rx;
+    int value;
+    value = regcomp(&rx, "[:word:]", 0);
+    if (value == 0)
+    {
+        return 1;
+    }
+    else
+    {
+        printf("Process failed");
+    }
+}
+
+void generate_financial_report(struct transaction v[], int records){
+
+}
 /**
  *  // declaring a variable to create a regex
     regex_t rx;
