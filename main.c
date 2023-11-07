@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "time.h"
 #include "regex.h"
+#include "string.h"
 #include <stdlib.h>
 
 typedef struct transaction{
@@ -90,25 +91,104 @@ void calculate_account_balance(struct transaction v[], int records){
             balance+=v[i].amount;
         else balance-=v[i].amount;
     }
-    printf("Your current account balance is: %g", balance);
+    printf("Your current account balance is: %g\n", balance);
 }
 
+/*
 int validate_date(char s[]){
+    int day=0, month=0, year=0;
     regex_t rx;
     int value;
-    value = regcomp(&rx, "[:word:]", 0);
+    //value = re_compile_pattern(&rx, "([0-9]+(/[0-9]+)+)", 0);
+    //value = re_compile_pattern (&rx, "Hello World", 0);
+    //value = re_match(&rx, "Hello World again", 0, NULL, 0);
     if (value == 0)
     {
+        printf("Pattern matched\n");
         return 1;
+    }
+    else if (value == REG_NOMATCH)
+    {
+        printf("Pattern not found\n");
+        return 0;
     }
     else
     {
-        printf("Process failed");
+        printf("Some error occured\n");
+        return 0;
+    }
+}
+ */
+
+int validate_date(char s[], struct tm *new_date){
+    /**
+     * param: char[], *tm datetime object
+     * return: integer (0/1)
+     * description: checks if the date provided as an argument meets the ISO C standard and stores
+     *  the data for a time since the Epoch object
+     * exception: the result can not be represented -> "Invalid date"
+     */
+    int day, month, year;
+    char *p=strtok(s, "/");
+    day=atoi(p);
+    p=strtok(NULL, "/");
+    month=atoi(p);
+    p=strtok(NULL, "/");
+    year=atoi(p);
+
+    new_date->tm_year=year-1900;
+    new_date->tm_mon=month-1;
+    new_date->tm_mday=day;
+    new_date->tm_hour = 0;
+    new_date->tm_min = 0;
+    new_date->tm_sec = 1;
+    new_date->tm_isdst = -1;
+
+    int result = mktime(new_date);
+    if( result == -1 ) {
+        printf("Invalid date\n");
+        return 0;
+    } else {
+        return 1;
     }
 }
 
 void generate_financial_report(struct transaction v[], int records){
+    /**
+     * param: array of transaction objects, integer
+     * return: none
+     * description: generates a financial report consisting of a summary of income and expenses between two given dates
+     * exception: no transactions found for given dates
+     */
+    char s[250], e[250];
+    struct tm start_date, end_date;
+    printf("Write the start date in format DD/MM/YYYY:");
+    gets(s);
+    while(validate_date(s, &start_date)==0){
+        gets(s);
+    }
 
+    printf("Write the end date in format DD/MM/YYYY:");
+    gets(s);
+    while(validate_date(s, &end_date)==0){
+        gets(s);
+    }
+
+    strftime(s,80,"%d/%m/%Y", &start_date);
+    strftime(e,80,"%d/%m/%Y", &end_date);
+    printf("Generating report for transactions between %s and %s:\n", s, e);
+
+    float income=0, expenses=0;
+    for (int i=0; i<records; i++){
+        //if() date in interval
+        if(v[i].type==0)
+            income+=v[i].amount;
+        else expenses+=v[i].amount;
+    }
+
+    //no transactions found for given dates
+    printf("Income: %g\n", income);
+    printf("Expenses: %g\n", income);
 }
 /**
  *  // declaring a variable to create a regex
@@ -133,12 +213,12 @@ void generate_financial_report(struct transaction v[], int records){
  */
 
 int main(){
-    char menu_choice[1];
+    char menu_choice[100];
     struct transaction v[50];
     int records=0;
     write_menu();
     while(menu_choice[0]!='0'){
-        scanf("%1s", menu_choice);
+        gets(menu_choice);
         if(menu_choice[0]=='1'){
             add(v, &records);
         }
@@ -149,7 +229,7 @@ int main(){
             calculate_account_balance(v, records);
         }
         else if(menu_choice[0]=='4'){
-            //financial report
+            generate_financial_report(v, records);
         }
         else{
             printf("Invalid option.");
