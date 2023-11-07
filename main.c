@@ -22,6 +22,8 @@ void write_menu(){
     printf("2. View transactions\n");
     printf("3. Calculate account balance\n");
     printf("4. Generate financial report\n");
+    printf("5. Save transactions to file\n");
+    printf("6. Load transactions from file\n");
 }
 
 void print_one_transaction(struct transaction v){
@@ -139,6 +141,9 @@ int validate_date(char s[], struct tm *new_date){
     new_date->tm_year=year-1900;
     new_date->tm_mon=month-1;
     new_date->tm_mday=day;
+
+    //check valid date manually
+
     new_date->tm_hour = 0;
     new_date->tm_min = 0;
     new_date->tm_sec = 1;
@@ -151,6 +156,27 @@ int validate_date(char s[], struct tm *new_date){
     } else {
         return 1;
     }
+}
+
+int check_date_in_interval(struct tm start_date, struct tm end_date, struct tm item){
+    /**
+     * param: tm datetime object, tm datetime object, tm datetime object
+     * return: integer (0/1)
+     * description: checks if argument item is between two given dates
+     */
+    struct tm new_date=item;
+    new_date.tm_hour = 0;
+    new_date.tm_min = 0;
+    new_date.tm_sec = 1;
+    new_date.tm_isdst = -1;
+    int s_date=mktime(&start_date);
+    int e_date=mktime(&end_date);
+    int item_date=mktime(&new_date);
+    long long int dif1=item_date-s_date;
+    long long int dif2=e_date-item_date;
+    if(dif1>=0 && dif2>=0)
+        return 1;
+    return 0;
 }
 
 void generate_financial_report(struct transaction v[], int records){
@@ -180,15 +206,18 @@ void generate_financial_report(struct transaction v[], int records){
 
     float income=0, expenses=0;
     for (int i=0; i<records; i++){
-        //if() date in interval
-        if(v[i].type==0)
-            income+=v[i].amount;
-        else expenses+=v[i].amount;
+        if(check_date_in_interval(start_date, end_date, v[i].date)){
+            if(v[i].type==0)
+                income+=v[i].amount;
+            else expenses+=v[i].amount;
+        }
     }
-
-    //no transactions found for given dates
-    printf("Income: %g\n", income);
-    printf("Expenses: %g\n", income);
+    if(income==0 && expenses==0)
+        printf("No transactions found between given dates");
+    else{
+        printf("Income: %g\n", income);
+        printf("Expenses: %g\n", expenses);
+    }
 }
 /**
  *  // declaring a variable to create a regex
@@ -212,6 +241,29 @@ void generate_financial_report(struct transaction v[], int records){
  * @return
  */
 
+void save_transactions_to_file(struct transaction v[], int records){
+    FILE *fp;
+    fp = fopen("history.txt", "w");
+    for(int i=0; i<records; i++) {
+        fprintf(fp, "%g ", v[i].amount);
+        fprintf(fp, "%s ", v[i].description);
+        fprintf(fp, "%d ", v[i].type);
+        char buffer[26];
+        strftime(buffer, 26, "%d/%m/%Y/%H:%M:%S", &v[i].date);
+        fprintf(fp, "%s", buffer);
+    }
+    fclose(fp);
+    printf("Transactions saved to file");
+}
+
+void load_transactions_from_file(struct transaction v[], int *records){
+    FILE *fp;
+    fp = fopen("history.txt", "w");
+
+    fclose(fp);
+    printf("Transactions loaded from file");
+}
+
 int main(){
     char menu_choice[100];
     struct transaction v[50];
@@ -230,6 +282,12 @@ int main(){
         }
         else if(menu_choice[0]=='4'){
             generate_financial_report(v, records);
+        }
+        else if(menu_choice[0]=='5'){
+            save_transactions_to_file(v, records);
+        }
+        else if(menu_choice[0]=='5'){
+            load_transactions_from_file(v, &records);
         }
         else{
             printf("Invalid option.");
