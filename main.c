@@ -11,6 +11,8 @@ typedef struct transaction{
     enum available_types{income, expense} type;
 };
 
+/// PRINT FUNCTIONS: -------------------------------------------------
+
 void write_menu(){
     /**
      * param: none
@@ -31,12 +33,15 @@ void print_one_transaction(struct transaction v){
      * param: array of transaction objects
      * return: none
      * description: prints in the console one transaction, passed as the argument
+     * preconditions: validity of transaction information
      */
     char c;
     if(v.type==0){
         c='+';
     }else c='-';
-    printf("Date: %s", asctime(&v.date));
+    char buffer[32];
+    strftime(buffer, 26, "%d/%m/%Y %H:%M:%S", &v.date);
+    printf("Date: %s\n", buffer);
     printf("Amount: %c%g\n", c,v.amount);
     printf("Description: %s\n", v.description);
 }
@@ -47,6 +52,7 @@ void print_transactions(struct transaction v[], int records){
      * return: none
      * description: prints in the console the history of transactions, found in the first argument
      * exception: empty array raises the "No available transaction" error message
+     * preconditions: validity of transaction information
      */
      if(records==0){
          printf("No available transactions\n");
@@ -59,6 +65,114 @@ void print_transactions(struct transaction v[], int records){
          }
      }
 }
+
+/// FUNCTIONS FOR FILE MANIPULATION: ----------------------------------
+
+void add_from_file(char s[], struct transaction v[], int *records){
+    /**
+     * param: char[], array of transaction objects, integer
+     * return: none
+     * description: appends a new transaction from the given string to the array passed as argument
+     * preconditions: validity of transaction information
+     */
+    struct transaction aux;
+    char *p=strtok(s, "~");
+    aux.amount=atoi(p);
+    p=strtok(NULL, "~");
+    strcpy(aux.description, p);
+    p=strtok(NULL, "~");
+    aux.date.tm_mday=atoi(p);
+    p=strtok(NULL, "~");
+    aux.date.tm_mon=atoi(p);
+    p=strtok(NULL, "~");
+    aux.date.tm_year=atoi(p);
+    p=strtok(NULL, "~");
+    aux.date.tm_hour=atoi(p);
+    p=strtok(NULL, "~");
+    aux.date.tm_min=atoi(p);
+    p=strtok(NULL, "~");
+    aux.date.tm_sec=atoi(p);
+
+    v[*records]=aux;
+    (*records)++;
+}
+
+void save_transactions_to_file(struct transaction v[], int records){
+    /**
+     * param: array of transaction objects, integer
+     * return: none
+     * description: prints in file "history.txt" a list of all transactions
+     * preconditions: validity of transaction information
+     * exception: empty array raises "No transactions available"
+     */
+    FILE *fp;
+    fp = fopen("history.txt", "w");
+    for(int i=0; i<records; i++) {
+        fprintf(fp, "%g~", v[i].amount);
+        fprintf(fp, "%s~", v[i].description);
+        fprintf(fp, "%d~", v[i].type);
+        char buffer[26];
+        strftime(buffer, 26, "%d~%m~%Y~%H~%M~%S", &v[i].date);
+        fprintf(fp, "%s", buffer);
+    }
+    fclose(fp);
+    if(records==0)
+        printf("No transactions available\n");
+    else printf("Transactions saved to file\n");
+}
+
+void load_transactions_from_file(struct transaction v[], int *records){
+    /**
+    * param: array of transaction objects, integer
+    * return: none
+    * description: saves in the array passed as an argument the transactions from file "history.txt"
+    * exception: empty file raises "No available back-up"
+    * preconditions: validity of transaction information
+    */
+    FILE *fp;
+    fp = fopen("history.txt", "r");
+
+    *records=0;
+    char myString[32];
+    int iterations=0;
+    while(fgets(myString, 32, fp)) {
+        iterations++;
+        add_from_file(myString, v, records);
+    }
+
+    fclose(fp);
+    if(iterations==0){
+        printf("No available back-up\n");
+    }
+    else
+        printf("Transactions loaded from file\n");
+}
+
+/// BASIC ACCOUNTING FEATURES: -----------------------------------------
+
+int check_date_in_interval(struct tm start_date, struct tm end_date, struct tm item){
+    /**
+     * param: tm datetime object, tm datetime object, tm datetime object
+     * return: integer (0/1)
+     * description: checks if argument item is between two given dates
+     * preconditions: validity of transaction information
+     */
+    struct tm new_date=item;
+    new_date.tm_hour = 0;
+    new_date.tm_min = 0;
+    new_date.tm_sec = 1;
+    new_date.tm_isdst = -1;
+    int s_date=mktime(&start_date);
+    int e_date=mktime(&end_date);
+    int item_date=mktime(&new_date);
+    long long int dif1=item_date-s_date;
+    long long int dif2=e_date-item_date;
+    if(dif1>=0 && dif2>=0)
+        return 1;
+    return 0;
+}
+
+/// --------------------------------------------------------------------
 
 void add(struct transaction v[], int *records){
     /**
@@ -158,27 +272,6 @@ int validate_date(char s[], struct tm *new_date){
     }
 }
 
-int check_date_in_interval(struct tm start_date, struct tm end_date, struct tm item){
-    /**
-     * param: tm datetime object, tm datetime object, tm datetime object
-     * return: integer (0/1)
-     * description: checks if argument item is between two given dates
-     */
-    struct tm new_date=item;
-    new_date.tm_hour = 0;
-    new_date.tm_min = 0;
-    new_date.tm_sec = 1;
-    new_date.tm_isdst = -1;
-    int s_date=mktime(&start_date);
-    int e_date=mktime(&end_date);
-    int item_date=mktime(&new_date);
-    long long int dif1=item_date-s_date;
-    long long int dif2=e_date-item_date;
-    if(dif1>=0 && dif2>=0)
-        return 1;
-    return 0;
-}
-
 void generate_financial_report(struct transaction v[], int records){
     /**
      * param: array of transaction objects, integer
@@ -241,52 +334,29 @@ void generate_financial_report(struct transaction v[], int records){
  * @return
  */
 
-void save_transactions_to_file(struct transaction v[], int records){
-    FILE *fp;
-    fp = fopen("history.txt", "w");
-    for(int i=0; i<records; i++) {
-        fprintf(fp, "%g ", v[i].amount);
-        fprintf(fp, "%s ", v[i].description);
-        fprintf(fp, "%d ", v[i].type);
-        char buffer[26];
-        strftime(buffer, 26, "%d/%m/%Y/%H:%M:%S", &v[i].date);
-        fprintf(fp, "%s", buffer);
-    }
-    fclose(fp);
-    printf("Transactions saved to file");
-}
-
-void load_transactions_from_file(struct transaction v[], int *records){
-    FILE *fp;
-    fp = fopen("history.txt", "w");
-
-    fclose(fp);
-    printf("Transactions loaded from file");
-}
-
 int main(){
     char menu_choice[100];
     struct transaction v[50];
     int records=0;
     write_menu();
     while(menu_choice[0]!='0'){
-        gets(menu_choice);
-        if(menu_choice[0]=='1'){
+        scanf("%s", menu_choice);
+        if(strcmp(menu_choice,"1")==0){
             add(v, &records);
         }
-        else if(menu_choice[0]=='2'){
+        else if(strcmp(menu_choice,"2")==0){
             print_transactions(v, records);
         }
-        else if(menu_choice[0]=='3'){
+        else if(strcmp(menu_choice,"3")==0){
             calculate_account_balance(v, records);
         }
-        else if(menu_choice[0]=='4'){
+        else if(strcmp(menu_choice,"4")==0){
             generate_financial_report(v, records);
         }
-        else if(menu_choice[0]=='5'){
+        else if(strcmp(menu_choice,"5")==0){
             save_transactions_to_file(v, records);
         }
-        else if(menu_choice[0]=='5'){
+        else if(strcmp(menu_choice,"6")==0){
             load_transactions_from_file(v, &records);
         }
         else{
