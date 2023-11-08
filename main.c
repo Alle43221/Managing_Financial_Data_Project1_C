@@ -3,12 +3,13 @@
 #include "regex.h"
 #include "string.h"
 #include <stdlib.h>
+#include <assert.h>
 
 typedef struct transaction{
     float amount;
     struct tm date;
     char description[200];
-    enum available_types{income, expense} type;
+    int type;
 };
 
 /// PRINT FUNCTIONS: -------------------------------------------------
@@ -160,7 +161,7 @@ int check_date_in_interval(struct tm start_date, struct tm end_date, struct tm i
     struct tm new_date=item;
     new_date.tm_hour = 0;
     new_date.tm_min = 0;
-    new_date.tm_sec = 1;
+    new_date.tm_sec = 0;
     new_date.tm_isdst = -1;
     int s_date=mktime(&start_date);
     int e_date=mktime(&end_date);
@@ -172,7 +173,41 @@ int check_date_in_interval(struct tm start_date, struct tm end_date, struct tm i
     return 0;
 }
 
+int check_date_in_interval_tester(){
+    struct tm date1; date1.tm_mday=20; date1.tm_mon=9; date1.tm_year=2023;
+    struct tm date2; date2.tm_mday=21; date2.tm_mon=9; date2.tm_year=2023;
+    struct tm date3; date3.tm_mday=23; date3.tm_mon=9; date3.tm_year=2023;
+    assert(check_date_in_interval(date1, date1, date1)==1);
+    assert(check_date_in_interval(date1, date1, date2)==0);
+    //aici pusca
+    assert(check_date_in_interval(date1, date3, date2)==1);
+}
+
+void calculate_account_balance(struct transaction v[], int records){
+    /**
+     * param: array of transaction objects, integer
+     * return: none
+     * description: prints in the console the current account balance
+     * exception: empty array raises "No available transactions"
+     * preconditions: validity of transaction data
+     */
+    float balance=0;
+    for(int i=0; i<records; i++){
+        if(v[i].type==0)
+            balance+=v[i].amount;
+        else balance-=v[i].amount;
+    }
+    if(records==0){
+        printf("No available transactions\n");
+    }
+    else printf("Your current account balance is: %g\n", balance);
+}
+
 /// --------------------------------------------------------------------
+
+void global_tester(){
+    check_date_in_interval_tester();
+}
 
 void add(struct transaction v[], int *records){
     /**
@@ -195,21 +230,6 @@ void add(struct transaction v[], int *records){
     print_one_transaction(v[*records-1]);
 }
 
-void calculate_account_balance(struct transaction v[], int records){
-    /**
-     * param: array of transaction objects, integer
-     * return: none
-     * description: prints in the console the current account balance
-     */
-    float balance=0;
-    for(int i=0; i<records; i++){
-        if(v[i].type==0)
-            balance+=v[i].amount;
-        else balance-=v[i].amount;
-    }
-    printf("Your current account balance is: %g\n", balance);
-}
-
 /*
 int validate_date(char s[]){
     int day=0, month=0, year=0;
@@ -230,7 +250,7 @@ int validate_date(char s[]){
     }
     else
     {
-        printf("Some error occured\n");
+        printf("Some error occurred\n");
         return 0;
     }
 }
@@ -335,6 +355,7 @@ void generate_financial_report(struct transaction v[], int records){
  */
 
 int main(){
+    global_tester();
     char menu_choice[100];
     struct transaction v[50];
     int records=0;
