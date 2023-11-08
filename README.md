@@ -11,9 +11,10 @@ A console C application to simulate the management of financial data.
      - Record new transaction
      - Calculate the account balance
      - Display a list of previous transactions
-    
  4. **Simple Financial Reporting** (a summary of income and expenses
         for a specific period)
+ 5. **Data Manipulation in Files** allows the user to save and load financial data in files to preserve it between sessions
+    
 
 ## Usage
 
