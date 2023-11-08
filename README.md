@@ -1,7 +1,8 @@
 # Managing_Financial_Data_Project1_C
 
 ## Overview
-A console C application to simulate the management of financial data.
+A console C application to simulate the management of financial data in the form of transactions.
+Author: Moroz Alexandra-Ioana, UBB informatica romana
 
 ## Features
 
@@ -11,11 +12,19 @@ A console C application to simulate the management of financial data.
      - Record new transaction
      - Calculate the account balance
      - Display a list of previous transactions
-    
  4. **Simple Financial Reporting** (a summary of income and expenses
         for a specific period)
+ 5. **Data Manipulation in Files** allows the user to save and load financial data in files to preserve it between sessions
+    
 
 ## Usage
+User menu:
+1. Add transaction
+2. View transactions
+3. Calculate account balance
+4. Generate financial report
+5. Save transactions to file
+6. Load transactions from file
 
 ## Resources
 Additional resources used for the project:
