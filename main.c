@@ -1,12 +1,11 @@
 #include <stdio.h>
 #include "time.h"
-#include "regex.h"
 #include "string.h"
 #include <stdlib.h>
 #include <assert.h>
 
-typedef struct transaction{
-    float amount;
+ struct transaction{
+    double amount;
     struct tm date;
     char description[200];
     int type;
@@ -41,9 +40,9 @@ void print_one_transaction(struct transaction v){
         c='+';
     }else c='-';
     char buffer[32];
-    strftime(buffer, 26, "%d/%m/%Y %H:%M:%S", &v.date);
+    strftime(buffer, 32, "%d/%m/%Y %H:%M:%S", &v.date);
     printf("Date: %s\n", buffer);
-    printf("Amount: %c%g\n", c,v.amount);
+    printf("Amount: %c%1.2lf\n", c,v.amount);
     printf("Description: %s\n", v.description);
 }
 
@@ -78,15 +77,17 @@ void add_from_file(char s[], struct transaction v[], int *records){
      */
     struct transaction aux;
     char *p=strtok(s, "~");
-    aux.amount=atoi(p);
+    aux.amount=atof(p);
     p=strtok(NULL, "~");
     strcpy(aux.description, p);
     p=strtok(NULL, "~");
+    aux.type=atoi(p);
+    p=strtok(NULL, "~");
     aux.date.tm_mday=atoi(p);
     p=strtok(NULL, "~");
-    aux.date.tm_mon=atoi(p);
+    aux.date.tm_mon=atoi(p)-1;
     p=strtok(NULL, "~");
-    aux.date.tm_year=atoi(p);
+    aux.date.tm_year=atoi(p)-1900;
     p=strtok(NULL, "~");
     aux.date.tm_hour=atoi(p);
     p=strtok(NULL, "~");
@@ -114,7 +115,7 @@ void save_transactions_to_file(struct transaction v[], int records){
         fprintf(fp, "%d~", v[i].type);
         char buffer[26];
         strftime(buffer, 26, "%d~%m~%Y~%H~%M~%S", &v[i].date);
-        fprintf(fp, "%s", buffer);
+        fprintf(fp, "%s\n", buffer);
     }
     fclose(fp);
     if(records==0)
@@ -134,9 +135,9 @@ void load_transactions_from_file(struct transaction v[], int *records){
     fp = fopen("history.txt", "r");
 
     *records=0;
-    char myString[32];
+    char myString[1000];
     int iterations=0;
-    while(fgets(myString, 32, fp)) {
+    while(fgets(myString, 1000, fp)) {
         iterations++;
         add_from_file(myString, v, records);
     }
@@ -159,10 +160,9 @@ int check_date_in_interval(struct tm start_date, struct tm end_date, struct tm i
      * preconditions: validity of transaction information
      */
     struct tm new_date=item;
-    new_date.tm_hour = 0;
-    new_date.tm_min = 0;
-    new_date.tm_sec = 0;
-    new_date.tm_isdst = -1;
+    start_date.tm_year-=1900;
+    end_date.tm_year-=1900;
+    new_date.tm_year-=1900;
     int s_date=mktime(&start_date);
     int e_date=mktime(&end_date);
     int item_date=mktime(&new_date);
@@ -179,11 +179,47 @@ int check_date_in_interval_tester(){
     struct tm date3; date3.tm_mday=23; date3.tm_mon=9; date3.tm_year=2023;
     assert(check_date_in_interval(date1, date1, date1)==1);
     assert(check_date_in_interval(date1, date1, date2)==0);
-    //aici pusca
+    assert(check_date_in_interval(date1, date2, date2)==1);
+    assert(check_date_in_interval(date1, date2, date1)==1);
+    assert(check_date_in_interval(date2, date1, date2)==0);
     assert(check_date_in_interval(date1, date3, date2)==1);
 }
 
-void calculate_account_balance(struct transaction v[], int records){
+double calculate_account_balance(struct transaction v[], int records){
+    /**
+     * param: array of transaction objects, integer
+     * return: none
+     * description: calculates the current account balance
+     * preconditions: validity of transaction data
+     */
+    double balance=0;
+    for(int i=0; i<records; i++){
+        if(v[i].type==0)
+            balance+=v[i].amount;
+        else balance-=v[i].amount;
+    }
+    return balance;
+}
+
+void calculate_account_balance_tester(){
+    struct transaction array[1];
+    assert(calculate_account_balance(array, 0)==0);
+    struct transaction array1[2], aux1, aux2;
+    aux1.amount=100; aux2.amount=120;
+    array1[1]=aux1;array1[0]=aux2;
+    assert(calculate_account_balance(array1, 2)==220);
+    aux1.amount=100.25; aux2.amount=120.36;
+    array1[1]=aux1;array1[0]=aux2;
+    assert(calculate_account_balance(array1, 2)==220.61);
+    aux1.amount=-100.25; aux2.amount=120.36;
+    array1[1]=aux1;array1[0]=aux2;
+    assert(calculate_account_balance(array1, 2)==20.11);
+    aux1.amount=100.25; aux2.amount=-120.36;
+    array1[1]=aux1;array1[0]=aux2;
+    assert(calculate_account_balance(array1, 2)==-20.11);
+}
+
+void print_account_balance(struct transaction v[], int records){
     /**
      * param: array of transaction objects, integer
      * return: none
@@ -191,12 +227,7 @@ void calculate_account_balance(struct transaction v[], int records){
      * exception: empty array raises "No available transactions"
      * preconditions: validity of transaction data
      */
-    float balance=0;
-    for(int i=0; i<records; i++){
-        if(v[i].type==0)
-            balance+=v[i].amount;
-        else balance-=v[i].amount;
-    }
+    double balance= calculate_account_balance(v, records);
     if(records==0){
         printf("No available transactions\n");
     }
@@ -207,6 +238,7 @@ void calculate_account_balance(struct transaction v[], int records){
 
 void global_tester(){
     check_date_in_interval_tester();
+    calculate_account_balance_tester();
 }
 
 void add(struct transaction v[], int *records){
@@ -217,7 +249,7 @@ void add(struct transaction v[], int *records){
      */
     struct transaction aux;
     printf("Type amount:\n");
-    scanf("%f", &aux.amount);
+    scanf("%lf", &aux.amount);
     printf("Type description:\n");
     scanf("%200s", aux.description);
     printf("Income or expense? [0/1]");
@@ -229,32 +261,6 @@ void add(struct transaction v[], int *records){
     printf("Added transaction:\n");
     print_one_transaction(v[*records-1]);
 }
-
-/*
-int validate_date(char s[]){
-    int day=0, month=0, year=0;
-    regex_t rx;
-    int value;
-    //value = re_compile_pattern(&rx, "([0-9]+(/[0-9]+)+)", 0);
-    //value = re_compile_pattern (&rx, "Hello World", 0);
-    //value = re_match(&rx, "Hello World again", 0, NULL, 0);
-    if (value == 0)
-    {
-        printf("Pattern matched\n");
-        return 1;
-    }
-    else if (value == REG_NOMATCH)
-    {
-        printf("Pattern not found\n");
-        return 0;
-    }
-    else
-    {
-        printf("Some error occurred\n");
-        return 0;
-    }
-}
- */
 
 int validate_date(char s[], struct tm *new_date){
     /**
@@ -272,24 +278,8 @@ int validate_date(char s[], struct tm *new_date){
     p=strtok(NULL, "/");
     year=atoi(p);
 
-    new_date->tm_year=year-1900;
-    new_date->tm_mon=month-1;
-    new_date->tm_mday=day;
+    return 1;
 
-    //check valid date manually
-
-    new_date->tm_hour = 0;
-    new_date->tm_min = 0;
-    new_date->tm_sec = 1;
-    new_date->tm_isdst = -1;
-
-    int result = mktime(new_date);
-    if( result == -1 ) {
-        printf("Invalid date\n");
-        return 0;
-    } else {
-        return 1;
-    }
 }
 
 void generate_financial_report(struct transaction v[], int records){
@@ -314,10 +304,10 @@ void generate_financial_report(struct transaction v[], int records){
     }
 
     strftime(s,80,"%d/%m/%Y", &start_date);
+    printf("%s\n", s);
     strftime(e,80,"%d/%m/%Y", &end_date);
-    printf("Generating report for transactions between %s and %s:\n", s, e);
 
-    float income=0, expenses=0;
+    double income=0, expenses=0;
     for (int i=0; i<records; i++){
         if(check_date_in_interval(start_date, end_date, v[i].date)){
             if(v[i].type==0)
@@ -332,27 +322,6 @@ void generate_financial_report(struct transaction v[], int records){
         printf("Expenses: %g\n", expenses);
     }
 }
-/**
- *  // declaring a variable to create a regex
-    regex_t rx;
-
-    // to store the return value after regex creation
-    int value;
-
-    // calling regcompn() function to create regex
-    value = regcomp(&rx, "[:word:]", 0);
-
-    // checking if the compilation was successful
-    if (value == 0)
-    {
-        printf("Process successful");
-    }
-    else
-    {
-        printf("Process failed");
-    }
- * @return
- */
 
 int main(){
     global_tester();
@@ -369,7 +338,7 @@ int main(){
             print_transactions(v, records);
         }
         else if(strcmp(menu_choice,"3")==0){
-            calculate_account_balance(v, records);
+            print_account_balance(v, records);
         }
         else if(strcmp(menu_choice,"4")==0){
             generate_financial_report(v, records);

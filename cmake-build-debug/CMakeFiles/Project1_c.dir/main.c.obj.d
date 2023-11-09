@@ -17,8 +17,6 @@ CMakeFiles/Project1_c.dir/main.c.obj: \
  C:/PROGRA~1/JETBRA~1/CLION2~1.4/bin/mingw/x86_64-w64-mingw32/include/sys/timeb.h \
  C:/PROGRA~1/JETBRA~1/CLION2~1.4/bin/mingw/x86_64-w64-mingw32/include/sec_api/sys/timeb_s.h \
  C:/PROGRA~1/JETBRA~1/CLION2~1.4/bin/mingw/x86_64-w64-mingw32/include/pthread_time.h \
- C:\Users\Ale\CLionProjects\Managing_Financial_Data_Project1_C\regex.h \
- C:/PROGRA~1/JETBRA~1/CLION2~1.4/bin/mingw/x86_64-w64-mingw32/include/sys/types.h \
  C:/PROGRA~1/JETBRA~1/CLION2~1.4/bin/mingw/x86_64-w64-mingw32/include/string.h \
  C:/PROGRA~1/JETBRA~1/CLION2~1.4/bin/mingw/x86_64-w64-mingw32/include/sec_api/string_s.h \
  C:/PROGRA~1/JETBRA~1/CLION2~1.4/bin/mingw/x86_64-w64-mingw32/include/stdlib.h \
