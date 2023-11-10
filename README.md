@@ -15,7 +15,7 @@ Author: Moroz Alexandra-Ioana, UBB informatica romana
  4. **Simple Financial Reporting** (a summary of income and expenses
         for a specific period)
  5. **Data Manipulation in Files** allows the user to save and load financial data in files to preserve it between sessions
-    
+ 6. **Input Data Validation**
 
 ## Usage
 User menu:
@@ -25,7 +25,3 @@ User menu:
 4. Generate financial report
 5. Save transactions to file
 6. Load transactions from file
-
-## Resources
-Additional resources used for the project:
- - [Regex for Windows](https://gnuwin32.sourceforge.net/packages/regex.htm)

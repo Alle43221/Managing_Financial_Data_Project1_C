@@ -3,8 +3,9 @@
 #include "string.h"
 #include <stdlib.h>
 #include <assert.h>
+#include <ctype.h>
 
- struct transaction{
+struct transaction{
     double amount;
     struct tm date;
     char description[200];
@@ -150,6 +151,132 @@ void load_transactions_from_file(struct transaction v[], int *records){
         printf("Transactions loaded from file\n");
 }
 
+/// VALIDATION FUNCTIONS: ----------------------------------------------
+
+int validate_date_format(char s[]){
+    /**
+     * param: char[]
+     * return: integer (0/1)
+     * description: checks if the string provided respects the imposed "DD/MM/YYYY" format
+     */
+     char copy[250];
+    strcpy(copy, s);
+    if(strlen(s)!=10){
+        return 0;
+    }
+    char *p;
+    p=strtok(s, "/");
+    if(strlen(p)!=2){
+        return 0;
+    }
+    if(!isdigit(*p) || !isdigit(*(p+1))) {
+        return 0;
+    }
+    p= strtok(NULL, "/");
+    if(strlen(p)!=2){
+        return 0;
+    }
+    if(!isdigit(*p) || !isdigit(*(p+1))) {
+        return 0;
+    }
+    p= strtok(NULL, "/");
+    if(strlen(p)!=4){
+        return 0;
+    }
+    if(!isdigit(*p) || !isdigit(*(p+1)) || !isdigit(*(p+2))|| !isdigit(*(p+3))) {
+        return 0;
+    }
+    strcpy(s, copy);
+    return 1;
+}
+
+void validate_date_format_tester(){
+    char s[15]="1/12/2023";
+    assert(validate_date_format(s)==0);
+    strcpy(s, "12/1/2023");
+    assert(validate_date_format(s)==0);
+    strcpy(s, "12/12/23");
+    assert(validate_date_format(s)==0);
+    strcpy(s, "01/12/2023");
+    assert(validate_date_format(s)==1);
+    strcpy(s, "12/01/2023");
+    assert(validate_date_format(s)==1);
+    strcpy(s, "//");
+    assert(validate_date_format(s)==0);
+    strcpy(s, "aa/aa/aaaa");
+    assert(validate_date_format(s)==0);
+    strcpy(s, "abracadabra");
+    assert(validate_date_format(s)==0);
+    strcpy(s, "23/14/2000");
+    assert(validate_date_format(s)==1);
+    strcpy(s, "-3/14/2000");
+    assert(validate_date_format(s)==0);
+}
+
+int validate_date(char s[]){
+    /**
+    * param: char[]
+    * return: integer (0/1)
+    * description: checks if the string provided corresponds to a valid date
+    * preconditions: the string respects the format "DD/MM/YYYY"
+    */
+    char copy[11];
+    strcpy(copy, s);
+    char *p=strtok(s, "/");
+    int day= atoi(p);
+    p=strtok(NULL, "/");
+    int month= atoi(p);
+    p=strtok(NULL, "/");
+    int year= atoi(p);
+
+    if(day<=0 || month<=0 || year<=0)
+        return 0;
+    if(year<1900)
+        return 0;
+    if(month>12)
+        return 0;
+    if(month==4 || month==6 || month==9 || month==11){
+        if(day>30)
+            return 0;
+    }
+    else if(month==2){
+        if(year%16!=0 && year%4==0){
+            if(day>29)
+                return 0;
+        }
+        else
+        if(day>28)
+            return 0;
+    }
+    else{
+        if(day>31)
+            return 0;
+    }
+    strcpy(s, copy);
+    return 1;
+}
+
+void validate_date_tester(){
+    char s[11]="12/12/2023";
+    assert(validate_date(s)==1);
+    strcpy(s, "11/13/2023");
+    assert(validate_date(s)==0);
+    strcpy(s, "11/12/1800");
+    assert(validate_date(s)==0);
+    strcpy(s, "33/12/2023");
+    assert(validate_date(s)==0);
+    strcpy(s, "31/04/2023");
+    assert(validate_date(s)==0);
+    strcpy(s, "00/04/2023");
+    assert(validate_date(s)==0);
+    strcpy(s, "29/02/2016");
+    assert(validate_date(s)==0);
+    strcpy(s, "28/02/2016");
+    assert(validate_date(s)==1);
+    strcpy(s, "29/02/2020");
+    assert(validate_date(s)==1);
+}
+
 /// BASIC ACCOUNTING FEATURES: -----------------------------------------
 
 int check_date_in_interval(struct tm start_date, struct tm end_date, struct tm item){
@@ -236,11 +363,6 @@ void print_account_balance(struct transaction v[], int records){
 
 /// --------------------------------------------------------------------
 
-void global_tester(){
-    check_date_in_interval_tester();
-    calculate_account_balance_tester();
-}
-
 void add(struct transaction v[], int *records){
     /**
      * param: array of transaction objects, integer
@@ -262,26 +384,6 @@ void add(struct transaction v[], int *records){
     print_one_transaction(v[*records-1]);
 }
 
-int validate_date(char s[], struct tm *new_date){
-    /**
-     * param: char[], *tm datetime object
-     * return: integer (0/1)
-     * description: checks if the date provided as an argument meets the ISO C standard and stores
-     *  the data for a time since the Epoch object
-     * exception: the result can not be represented -> "Invalid date"
-     */
-    int day, month, year;
-    char *p=strtok(s, "/");
-    day=atoi(p);
-    p=strtok(NULL, "/");
-    month=atoi(p);
-    p=strtok(NULL, "/");
-    year=atoi(p);
-
-    return 1;
-
-}
-
 void generate_financial_report(struct transaction v[], int records){
     /**
      * param: array of transaction objects, integer
@@ -289,24 +391,48 @@ void generate_financial_report(struct transaction v[], int records){
      * description: generates a financial report consisting of a summary of income and expenses between two given dates
      * exception: no transactions found for given dates
      */
-    char s[250], e[250];
+    char s[250];
     struct tm start_date, end_date;
+    gets(s);
     printf("Write the start date in format DD/MM/YYYY:");
     gets(s);
-    while(validate_date(s, &start_date)==0){
-        gets(s);
+    int ok=0;
+    while(ok==0){
+        if(validate_date_format(s)==1){
+            if(validate_date(s)==1)
+                ok=1;
+            else {
+                printf("Invalid format!");
+                gets(s);
+            }
+        }
+        else
+        {
+            printf("Invalid format!");
+            gets(s);
+        }
     }
-
+    strftime(s,10,"%d/%m/%Y", &start_date);
+    ok=0;
     printf("Write the end date in format DD/MM/YYYY:");
     gets(s);
-    while(validate_date(s, &end_date)==0){
-        gets(s);
+    while(ok==0){
+        if(validate_date_format(s))
+            if(validate_date(s))
+                ok=1;
+            else {
+                printf("Invalid format!");
+                gets(s);
+            }
+        else
+        {
+            printf("Invalid format!");
+            gets(s);
+        }
     }
+    strftime(s,10,"%d/%m/%Y", &end_date);
 
-    strftime(s,80,"%d/%m/%Y", &start_date);
-    printf("%s\n", s);
-    strftime(e,80,"%d/%m/%Y", &end_date);
-
+    //separate summing of rest of function
     double income=0, expenses=0;
     for (int i=0; i<records; i++){
         if(check_date_in_interval(start_date, end_date, v[i].date)){
@@ -321,6 +447,13 @@ void generate_financial_report(struct transaction v[], int records){
         printf("Income: %g\n", income);
         printf("Expenses: %g\n", expenses);
     }
+}
+
+void global_tester(){
+    check_date_in_interval_tester();
+    calculate_account_balance_tester();
+    validate_date_format_tester();
+    validate_date_tester();
 }
 
 int main(){
