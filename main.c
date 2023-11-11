@@ -190,29 +190,6 @@ int validate_date_format(char s[]){
     return 1;
 }
 
-void validate_date_format_tester(){
-    char s[15]="1/12/2023";
-    assert(validate_date_format(s)==0);
-    strcpy(s, "12/1/2023");
-    assert(validate_date_format(s)==0);
-    strcpy(s, "12/12/23");
-    assert(validate_date_format(s)==0);
-    strcpy(s, "01/12/2023");
-    assert(validate_date_format(s)==1);
-    strcpy(s, "12/01/2023");
-    assert(validate_date_format(s)==1);
-    strcpy(s, "//");
-    assert(validate_date_format(s)==0);
-    strcpy(s, "aa/aa/aaaa");
-    assert(validate_date_format(s)==0);
-    strcpy(s, "abracadabra");
-    assert(validate_date_format(s)==0);
-    strcpy(s, "23/14/2000");
-    assert(validate_date_format(s)==1);
-    strcpy(s, "-3/14/2000");
-    assert(validate_date_format(s)==0);
-}
-
 int validate_date(char s[]){
     /**
     * param: char[]
@@ -256,25 +233,56 @@ int validate_date(char s[]){
     return 1;
 }
 
-void validate_date_tester(){
-    char s[11]="12/12/2023";
-    assert(validate_date(s)==1);
-    strcpy(s, "11/13/2023");
-    assert(validate_date(s)==0);
-    strcpy(s, "11/12/1800");
-    assert(validate_date(s)==0);
-    strcpy(s, "33/12/2023");
-    assert(validate_date(s)==0);
-    strcpy(s, "31/04/2023");
-    assert(validate_date(s)==0);
-    strcpy(s, "00/04/2023");
-    assert(validate_date(s)==0);
-    strcpy(s, "29/02/2016");
-    assert(validate_date(s)==0);
-    strcpy(s, "28/02/2016");
-    assert(validate_date(s)==1);
-    strcpy(s, "29/02/2020");
-    assert(validate_date(s)==1);
+int validate_amount(char s[]){
+    /**
+    * param: char[]
+    * return: integer (0/1)
+    * description: checks if the string provided corresponds to a valid amount
+    */
+    int len=strlen(s);
+    for(int i=0; i< len; i++){
+        if(isdigit(s[i])==0 && s[i]!='.')
+            return 0;
+    }
+    double amount=atof(s);
+    if(amount<=0)
+        return 0;
+    if(amount>1000000)
+        return 0;
+    amount*=100.0;
+    amount-=(int) amount;
+    if(amount>0)
+        return 0;
+    return 1;
+}
+
+int validate_description(char s[]){
+    /**
+   * param: char[]
+   * return: integer (0/1)
+   * description: checks if the string provided corresponds to a valid, not null description
+   */
+    for(int i=0; i< strlen(s); i++){
+        if(s[i]=='~' || s[i]=='\n')
+            return 0;
+    }
+    return 1;
+}
+
+int validate_type(char s[]){
+
+    /**
+    * param: char[]
+    * return: integer (0/1)
+    * description: checks if the string provided corresponds to a valid type
+    */
+
+    if(strlen(s)!=1)
+        return 0;
+    if(s[0]!='0' && s[0]!='1')
+        return 0;
+
+    return 1;
 }
 
 /// BASIC ACCOUNTING FEATURES: -----------------------------------------
@@ -300,18 +308,6 @@ int check_date_in_interval(struct tm start_date, struct tm end_date, struct tm i
     return 0;
 }
 
-int check_date_in_interval_tester(){
-    struct tm date1; date1.tm_mday=20; date1.tm_mon=9; date1.tm_year=2023;
-    struct tm date2; date2.tm_mday=21; date2.tm_mon=9; date2.tm_year=2023;
-    struct tm date3; date3.tm_mday=23; date3.tm_mon=9; date3.tm_year=2023;
-    assert(check_date_in_interval(date1, date1, date1)==1);
-    assert(check_date_in_interval(date1, date1, date2)==0);
-    assert(check_date_in_interval(date1, date2, date2)==1);
-    assert(check_date_in_interval(date1, date2, date1)==1);
-    assert(check_date_in_interval(date2, date1, date2)==0);
-    assert(check_date_in_interval(date1, date3, date2)==1);
-}
-
 double calculate_account_balance(struct transaction v[], int records){
     /**
      * param: array of transaction objects, integer
@@ -326,24 +322,6 @@ double calculate_account_balance(struct transaction v[], int records){
         else balance-=v[i].amount;
     }
     return balance;
-}
-
-void calculate_account_balance_tester(){
-    struct transaction array[1];
-    assert(calculate_account_balance(array, 0)==0);
-    struct transaction array1[2], aux1, aux2;
-    aux1.amount=100; aux2.amount=120;
-    array1[1]=aux1;array1[0]=aux2;
-    assert(calculate_account_balance(array1, 2)==220);
-    aux1.amount=100.25; aux2.amount=120.36;
-    array1[1]=aux1;array1[0]=aux2;
-    assert(calculate_account_balance(array1, 2)==220.61);
-    aux1.amount=-100.25; aux2.amount=120.36;
-    array1[1]=aux1;array1[0]=aux2;
-    assert(calculate_account_balance(array1, 2)==20.11);
-    aux1.amount=100.25; aux2.amount=-120.36;
-    array1[1]=aux1;array1[0]=aux2;
-    assert(calculate_account_balance(array1, 2)==-20.11);
 }
 
 void print_account_balance(struct transaction v[], int records){
@@ -361,27 +339,20 @@ void print_account_balance(struct transaction v[], int records){
     else printf("Your current account balance is: %g\n", balance);
 }
 
-/// --------------------------------------------------------------------
-
-void add(struct transaction v[], int *records){
+void calculate_income_expenses(struct transaction v[], int records, double *income, double *expenses, struct tm start_date, struct tm end_date){
     /**
-     * param: array of transaction objects, integer
-     * return: none
-     * description: appends a new transaction to the array passed as argument
-     */
-    struct transaction aux;
-    printf("Type amount:\n");
-    scanf("%lf", &aux.amount);
-    printf("Type description:\n");
-    scanf("%200s", aux.description);
-    printf("Income or expense? [0/1]");
-    scanf("%d", &aux.type);
-    time_t t = time(NULL);
-    aux.date = *localtime(&t);
-    v[*records]=aux;
-    *records=*records+1;
-    printf("Added transaction:\n");
-    print_one_transaction(v[*records-1]);
+    * param: array of transaction objects, integer, *double, *double, tm object, tm object
+    * return: none
+    * description: calculates the sum of income and, respectively, expenses between two given dates
+    */
+    *income=0, *expenses=0;
+    for (int i=0; i<records; i++){
+        if(check_date_in_interval(start_date, end_date, v[i].date)){
+            if(v[i].type==0)
+                *income+=v[i].amount;
+            else *expenses+=v[i].amount;
+        }
+    }
 }
 
 void generate_financial_report(struct transaction v[], int records){
@@ -389,7 +360,7 @@ void generate_financial_report(struct transaction v[], int records){
      * param: array of transaction objects, integer
      * return: none
      * description: generates a financial report consisting of a summary of income and expenses between two given dates
-     * exception: no transactions found for given dates
+     * exception: No transactions found for given dates
      */
     char s[250];
     struct tm start_date, end_date;
@@ -433,14 +404,8 @@ void generate_financial_report(struct transaction v[], int records){
     strftime(s,10,"%d/%m/%Y", &end_date);
 
     //separate summing of rest of function
-    double income=0, expenses=0;
-    for (int i=0; i<records; i++){
-        if(check_date_in_interval(start_date, end_date, v[i].date)){
-            if(v[i].type==0)
-                income+=v[i].amount;
-            else expenses+=v[i].amount;
-        }
-    }
+    double income, expenses;
+    calculate_income_expenses(v, records, &income, &expenses, start_date, end_date);
     if(income==0 && expenses==0)
         printf("No transactions found between given dates");
     else{
@@ -449,12 +414,207 @@ void generate_financial_report(struct transaction v[], int records){
     }
 }
 
+void add(struct transaction v[], int *records){
+    /**
+     * param: array of transaction objects, integer
+     * return: none
+     * description: appends a new transaction to the array passed as argument
+     */
+    struct transaction aux;
+    char s[250];
+    gets(s);
+    printf("Type amount:\n");
+    gets(s);
+    int ok=0;
+    while(ok==0){
+        if(validate_amount(s))
+            ok=1;
+        else {
+            printf("Invalid input!");
+            gets(s);
+        }
+    }
+    aux.amount= atof(s);
+
+    printf("Type description:\n");
+    ok=0;
+    gets(s);
+    while(ok==0){
+        if(validate_description(s))
+            ok=1;
+        else {
+            printf("Description can not contain the character \"~\" and must not be null!");
+            gets(s);
+        }
+    }
+    strcpy(aux.description, s);
+
+    printf("Income or expense? [0/1]");
+    gets(s);
+    ok=0;
+    while(ok==0){
+        if(validate_type(s))
+            ok=1;
+        else{
+            printf("Invalid input!");
+            gets(s);
+        }
+    }
+    aux.type=atoi(s);
+
+    time_t t = time(NULL);
+    aux.date = *localtime(&t);
+    v[*records]=aux;
+    *records=*records+1;
+    printf("Added transaction:\n");
+    print_one_transaction(v[*records-1]);
+}
+
+/// TESTING FUNCTIONS: ------------------------------------------------
+
+int check_date_in_interval_tester(){
+    struct tm date1; date1.tm_mday=20; date1.tm_mon=9; date1.tm_year=2023;
+    struct tm date2; date2.tm_mday=21; date2.tm_mon=9; date2.tm_year=2023;
+    struct tm date3; date3.tm_mday=23; date3.tm_mon=9; date3.tm_year=2023;
+    assert(check_date_in_interval(date1, date1, date1)==1);
+    assert(check_date_in_interval(date1, date1, date2)==0);
+    assert(check_date_in_interval(date1, date2, date2)==1);
+    assert(check_date_in_interval(date1, date2, date1)==1);
+    assert(check_date_in_interval(date2, date1, date2)==0);
+    assert(check_date_in_interval(date1, date3, date2)==1);
+}
+
+void calculate_income_expenses_tester(){
+    struct transaction array[1];
+    struct tm date1; date1.tm_mday=20; date1.tm_mon=9; date1.tm_year=2023;
+    double income=0, expenses=0;
+    calculate_income_expenses(array, 0, &income, &expenses, date1, date1);
+    assert(income==0 && expenses== 0);
+
+    struct transaction array1[2], aux1, aux2;
+    aux1.amount=100.25; aux2.amount=120.36;
+    aux1.type=0; aux2.type=0;
+    aux1.date=date1; aux2.date=date1;
+    array1[1]=aux1;array1[0]=aux2;
+    calculate_income_expenses(array1, 2, &income, &expenses, date1, date1);
+    assert(income==220.61 && expenses==0);
+
+    array1[0].type=1;
+    calculate_income_expenses(array1, 2, &income, &expenses, date1, date1);
+    assert(income==100.25 && expenses==120.36);
+
+    array1[1].type=1;
+    calculate_income_expenses(array1, 2, &income, &expenses, date1, date1);
+    assert(income==0 && expenses==220.61);
+}
+
+void calculate_account_balance_tester(){
+    struct transaction array[1];
+    assert(calculate_account_balance(array, 0)==0);
+    struct transaction array1[2], aux1, aux2;
+    aux1.amount=100; aux2.amount=120;
+    array1[1]=aux1;array1[0]=aux2;
+    assert(calculate_account_balance(array1, 2)==220);
+    aux1.amount=100.25; aux2.amount=120.36;
+    array1[1]=aux1;array1[0]=aux2;
+    assert(calculate_account_balance(array1, 2)==220.61);
+    aux1.amount=-100.25; aux2.amount=120.36;
+    array1[1]=aux1;array1[0]=aux2;
+    assert(calculate_account_balance(array1, 2)==20.11);
+    aux1.amount=100.25; aux2.amount=-120.36;
+    array1[1]=aux1;array1[0]=aux2;
+    assert(calculate_account_balance(array1, 2)==-20.11);
+}
+
+void validate_date_format_tester(){
+    char s[15]="1/12/2023";
+    assert(validate_date_format(s)==0);
+    strcpy(s, "12/1/2023");
+    assert(validate_date_format(s)==0);
+    strcpy(s, "12/12/23");
+    assert(validate_date_format(s)==0);
+    strcpy(s, "01/12/2023");
+    assert(validate_date_format(s)==1);
+    strcpy(s, "12/01/2023");
+    assert(validate_date_format(s)==1);
+    strcpy(s, "//");
+    assert(validate_date_format(s)==0);
+    strcpy(s, "aa/aa/aaaa");
+    assert(validate_date_format(s)==0);
+    strcpy(s, "abracadabra");
+    assert(validate_date_format(s)==0);
+    strcpy(s, "23/14/2000");
+    assert(validate_date_format(s)==1);
+    strcpy(s, "-3/14/2000");
+    assert(validate_date_format(s)==0);
+}
+
+void validate_date_tester(){
+    char s[11]="12/12/2023";
+    assert(validate_date(s)==1);
+    strcpy(s, "11/13/2023");
+    assert(validate_date(s)==0);
+    strcpy(s, "11/12/1800");
+    assert(validate_date(s)==0);
+    strcpy(s, "33/12/2023");
+    assert(validate_date(s)==0);
+    strcpy(s, "31/04/2023");
+    assert(validate_date(s)==0);
+    strcpy(s, "00/04/2023");
+    assert(validate_date(s)==0);
+    strcpy(s, "29/02/2016");
+    assert(validate_date(s)==0);
+    strcpy(s, "28/02/2016");
+    assert(validate_date(s)==1);
+    strcpy(s, "29/02/2020");
+    assert(validate_date(s)==1);
+}
+
+void validate_amount_tester(){
+    assert(validate_amount("120"));
+    assert(validate_amount("120.59"));
+    assert(validate_amount("120,59")==0);
+    assert(validate_amount("120."));
+    assert(validate_amount("portocala")==0);
+    assert(validate_amount("12a")==0);
+    assert(validate_amount("0")==0);
+    assert(validate_amount("-12")==0);
+    assert(validate_amount("10000000")==0);
+    assert(validate_amount("100.658")==0);
+}
+
+void validate_description_tester(){
+    char s[15]="bursa";
+    assert(validate_description(s));
+    strcpy(s, "bursa~");
+    assert(validate_description(s)==0);
+    strcpy(s, "\n");
+    assert(validate_description(s)==0);
+}
+
+void validate_type_tester(){
+    char s[15]="0";
+    assert(validate_type(s));
+    s[0]='1';
+    assert(validate_type(s));
+    strcpy(s, "01");
+    assert(validate_type(s)==0);
+    strcpy(s, "income");
+    assert(validate_type(s)==0);
+}
+
 void global_tester(){
     check_date_in_interval_tester();
     calculate_account_balance_tester();
     validate_date_format_tester();
     validate_date_tester();
+    calculate_income_expenses_tester();
+    validate_amount_tester();
+    validate_description_tester();
+    validate_type_tester();
 }
+
+/// --------------------------------------------------------------------
 
 int main(){
     global_tester();
