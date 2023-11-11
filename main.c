@@ -262,8 +262,10 @@ int validate_description(char s[]){
    * return: integer (0/1)
    * description: checks if the string provided corresponds to a valid, not null description
    */
+   if(strlen(s)==0)
+       return 0;
     for(int i=0; i< strlen(s); i++){
-        if(s[i]=='~' || s[i]=='\n')
+        if(s[i]=='~')
             return 0;
     }
     return 1;
@@ -430,7 +432,7 @@ void add(struct transaction v[], int *records){
         if(validate_amount(s))
             ok=1;
         else {
-            printf("Invalid input!");
+            printf("Invalid input!\n");
             gets(s);
         }
     }
@@ -443,7 +445,7 @@ void add(struct transaction v[], int *records){
         if(validate_description(s))
             ok=1;
         else {
-            printf("Description can not contain the character \"~\" and must not be null!");
+            printf("Description can not contain the character \"~\" and must not be null!\n");
             gets(s);
         }
     }
@@ -456,7 +458,7 @@ void add(struct transaction v[], int *records){
         if(validate_type(s))
             ok=1;
         else{
-            printf("Invalid input!");
+            printf("Invalid input!\n");
             gets(s);
         }
     }
@@ -588,7 +590,7 @@ void validate_description_tester(){
     assert(validate_description(s));
     strcpy(s, "bursa~");
     assert(validate_description(s)==0);
-    strcpy(s, "\n");
+    strcpy(s, "");
     assert(validate_description(s)==0);
 }
 
@@ -643,7 +645,7 @@ int main(){
             load_transactions_from_file(v, &records);
         }
         else{
-            printf("Invalid option.");
+            printf("Invalid option!\n");
         }
     }
     return 0;
