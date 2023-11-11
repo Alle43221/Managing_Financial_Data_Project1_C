@@ -16,6 +16,9 @@ Author: Moroz Alexandra-Ioana, UBB informatica romana
         for a specific period)
  5. **Data Manipulation in Files** allows the user to save and load financial data in files to preserve it between sessions
  6. **Input Data Validation**
+7. **Documentation and Comments**
+8. **Testing** for all validation and accounting functions with assert
+9. **Error Handling**
 
 ## Usage
 User menu:
