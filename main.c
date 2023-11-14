@@ -233,6 +233,28 @@ int validate_date(char s[]){
     return 1;
 }
 
+int validate_second_date(struct tm end_date, struct tm start_date){
+    /**
+   * param: tm datetime obj, tm datetime obj
+   * return: integer (0/1)
+   * description: checks if the first date comes before the second one
+   * preconditions: the string respects the format "DD/MM/YYYY" and is a valid date
+   */
+    start_date.tm_year-=1900;
+    end_date.tm_year-=1900;
+    start_date.tm_hour=0;end_date.tm_hour=0;
+    start_date.tm_sec=0;end_date.tm_sec=0;
+    start_date.tm_min=0;end_date.tm_min=0;
+    start_date.tm_isdst=0;end_date.tm_isdst=0;
+    start_date.tm_mon-=1;end_date.tm_mon-=1;
+    int end_date_int=mktime(&end_date);
+    int start_date_int=mktime(&start_date);
+    int diff_t=end_date_int-start_date_int;
+    if(diff_t<0)
+        return 0;
+    return 1;
+}
+
 int validate_amount(char s[]){
     /**
     * param: char[]
@@ -289,6 +311,26 @@ int validate_type(char s[]){
 
 /// BASIC ACCOUNTING FEATURES: -----------------------------------------
 
+struct tm transform_char_to_tm(char s[]){
+    /**
+     * param: char[]
+     * return: tm datetime object
+     * description: converts the date from format "DD/MM/YYYY" to a tm object
+     * preconditions: validity of date
+     */
+    struct tm date;
+    char copy[250];
+    strcpy(copy, s);
+    char *p;
+    p=strtok(s, "/");
+    date.tm_mday=atoi(p);
+    p= strtok(NULL, "/");
+    date.tm_mon=atoi(p);
+    p= strtok(NULL, "/");
+    date.tm_year=atoi(p);
+    return date;
+}
+
 int check_date_in_interval(struct tm start_date, struct tm end_date, struct tm item){
     /**
      * param: tm datetime object, tm datetime object, tm datetime object
@@ -300,6 +342,7 @@ int check_date_in_interval(struct tm start_date, struct tm end_date, struct tm i
     start_date.tm_year-=1900;
     end_date.tm_year-=1900;
     new_date.tm_year-=1900;
+    start_date.tm_mon-=1;end_date.tm_mon-=1;new_date.tm_mon-=1;
     int s_date=mktime(&start_date);
     int e_date=mktime(&end_date);
     int item_date=mktime(&new_date);
@@ -375,41 +418,51 @@ void generate_financial_report(struct transaction v[], int records){
             if(validate_date(s)==1)
                 ok=1;
             else {
-                printf("Invalid format!");
+                printf("Invalid format!\n");
                 gets(s);
             }
         }
         else
         {
-            printf("Invalid format!");
+            printf("Invalid format!\n");
             gets(s);
         }
     }
-    strftime(s,10,"%d/%m/%Y", &start_date);
+    start_date= transform_char_to_tm(s);
     ok=0;
     printf("Write the end date in format DD/MM/YYYY:");
     gets(s);
     while(ok==0){
-        if(validate_date_format(s))
-            if(validate_date(s))
-                ok=1;
+        if(validate_date_format(s)){
+            if(validate_date(s)){
+                end_date= transform_char_to_tm(s);
+                if(validate_second_date(end_date, start_date)){
+                    ok=1;
+                }
+                else
+                {
+                    printf("The second date should follow the first one!\n");
+                    gets(s);
+                }
+            }
             else {
-                printf("Invalid format!");
+                printf("Invalid format!\n");
                 gets(s);
             }
+        }
+
         else
         {
-            printf("Invalid format!");
+            printf("Invalid format!\n");
             gets(s);
         }
     }
-    strftime(s,10,"%d/%m/%Y", &end_date);
 
     //separate summing of rest of function
     double income, expenses;
     calculate_income_expenses(v, records, &income, &expenses, start_date, end_date);
     if(income==0 && expenses==0)
-        printf("No transactions found between given dates");
+        printf("No transactions found between given dates\n");
     else{
         printf("Income: %g\n", income);
         printf("Expenses: %g\n", expenses);
@@ -605,6 +658,16 @@ void validate_type_tester(){
     assert(validate_type(s)==0);
 }
 
+void validate_transform_char_to_tm(){
+    char s[11]="12/10/2023";
+    struct tm date;
+    date.tm_mon=10; date.tm_year=2023; date.tm_mday=12;
+    struct tm date1= transform_char_to_tm(s);
+    assert(date1.tm_year==date.tm_year);
+    assert(date1.tm_mon==date.tm_mon);
+    assert(date1.tm_mday==date.tm_mday);
+}
+
 void global_tester(){
     check_date_in_interval_tester();
     calculate_account_balance_tester();
@@ -614,6 +677,7 @@ void global_tester(){
     validate_amount_tester();
     validate_description_tester();
     validate_type_tester();
+    validate_transform_char_to_tm();
 }
 
 /// --------------------------------------------------------------------
