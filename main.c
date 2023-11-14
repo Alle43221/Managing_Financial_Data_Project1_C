@@ -328,6 +328,10 @@ struct tm transform_char_to_tm(char s[]){
     date.tm_mon=atoi(p);
     p= strtok(NULL, "/");
     date.tm_year=atoi(p);
+    date.tm_sec=0;
+    date.tm_hour=0;
+    date.tm_min=0;
+    date.tm_isdst=0;
     return date;
 }
 
@@ -339,6 +343,9 @@ int check_date_in_interval(struct tm start_date, struct tm end_date, struct tm i
      * preconditions: validity of transaction information
      */
     struct tm new_date=item;
+    new_date.tm_hour=0;
+    new_date.tm_min=0;
+    new_date.tm_sec=0;
     start_date.tm_year-=1900;
     end_date.tm_year-=1900;
     new_date.tm_year-=1900;
@@ -542,6 +549,7 @@ int check_date_in_interval_tester(){
 void calculate_income_expenses_tester(){
     struct transaction array[1];
     struct tm date1; date1.tm_mday=20; date1.tm_mon=9; date1.tm_year=2023;
+    date1.tm_sec=0; date1.tm_min=0; date1.tm_hour=0; date1.tm_isdst=0;
     double income=0, expenses=0;
     calculate_income_expenses(array, 0, &income, &expenses, date1, date1);
     assert(income==0 && expenses== 0);
@@ -565,20 +573,22 @@ void calculate_income_expenses_tester(){
 
 void calculate_account_balance_tester(){
     struct transaction array[1];
+    double epsilon=0.001;
     assert(calculate_account_balance(array, 0)==0);
     struct transaction array1[2], aux1, aux2;
+    aux1.type=0; aux2.type=0;
     aux1.amount=100; aux2.amount=120;
     array1[1]=aux1;array1[0]=aux2;
     assert(calculate_account_balance(array1, 2)==220);
     aux1.amount=100.25; aux2.amount=120.36;
     array1[1]=aux1;array1[0]=aux2;
-    assert(calculate_account_balance(array1, 2)==220.61);
+    assert(abs(calculate_account_balance(array1, 2)-220.61)<epsilon);
     aux1.amount=-100.25; aux2.amount=120.36;
     array1[1]=aux1;array1[0]=aux2;
-    assert(calculate_account_balance(array1, 2)==20.11);
+    assert(abs(calculate_account_balance(array1, 2)-20.11)<epsilon);
     aux1.amount=100.25; aux2.amount=-120.36;
     array1[1]=aux1;array1[0]=aux2;
-    assert(calculate_account_balance(array1, 2)==-20.11);
+    assert(abs(calculate_account_balance(array1, 2)-(-20.11))<epsilon);
 }
 
 void validate_date_format_tester(){
