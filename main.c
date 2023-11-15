@@ -321,13 +321,12 @@ struct tm transform_char_to_tm(char s[]){
     struct tm date;
     char copy[250];
     strcpy(copy, s);
-    char *p;
-    p=strtok(s, "/");
+    char *p=strtok(s, "/");
     date.tm_mday=atoi(p);
     p= strtok(NULL, "/");
-    date.tm_mon=atoi(p);
+    date.tm_mon=atoi(p)-1;
     p= strtok(NULL, "/");
-    date.tm_year=atoi(p);
+    date.tm_year=atoi(p)-1900;
     date.tm_sec=0;
     date.tm_hour=0;
     date.tm_min=0;
@@ -342,14 +341,16 @@ int check_date_in_interval(struct tm start_date, struct tm end_date, struct tm i
      * description: checks if argument item is between two given dates
      * preconditions: validity of transaction information
      */
-    struct tm new_date=item;
+    struct tm new_date;
+    new_date.tm_year=item.tm_year;
+    new_date.tm_mon=item.tm_mon;
+    new_date.tm_mday=item.tm_mday;
     new_date.tm_hour=0;
     new_date.tm_min=0;
     new_date.tm_sec=0;
-    start_date.tm_year-=1900;
-    end_date.tm_year-=1900;
-    new_date.tm_year-=1900;
-    start_date.tm_mon-=1;end_date.tm_mon-=1;new_date.tm_mon-=1;
+    new_date.tm_isdst=0;
+    new_date.tm_yday=0;
+    new_date.tm_wday=0;
     int s_date=mktime(&start_date);
     int e_date=mktime(&end_date);
     int item_date=mktime(&new_date);
@@ -535,9 +536,12 @@ void add(struct transaction v[], int *records){
 /// TESTING FUNCTIONS: ------------------------------------------------
 
 int check_date_in_interval_tester(){
-    struct tm date1; date1.tm_mday=20; date1.tm_mon=9; date1.tm_year=2023;
-    struct tm date2; date2.tm_mday=21; date2.tm_mon=9; date2.tm_year=2023;
-    struct tm date3; date3.tm_mday=23; date3.tm_mon=9; date3.tm_year=2023;
+    char s[]="20/09/2023";
+    struct tm date1= transform_char_to_tm(s); //date1.tm_mday=20; date1.tm_mon=9; date1.tm_year=2023;
+    char s1[]="21/09/2023";
+    struct tm date2= transform_char_to_tm(s1); //date2.tm_mday=21; date2.tm_mon=9; date2.tm_year=2023;
+    char s2[]="23/09/2023";
+    struct tm date3= transform_char_to_tm(s2); // date3.tm_mday=23; date3.tm_mon=9; date3.tm_year=2023;
     assert(check_date_in_interval(date1, date1, date1)==1);
     assert(check_date_in_interval(date1, date1, date2)==0);
     assert(check_date_in_interval(date1, date2, date2)==1);
@@ -671,7 +675,7 @@ void validate_type_tester(){
 void validate_transform_char_to_tm(){
     char s[11]="12/10/2023";
     struct tm date;
-    date.tm_mon=10; date.tm_year=2023; date.tm_mday=12;
+    date.tm_mon=9; date.tm_year=123; date.tm_mday=12;
     struct tm date1= transform_char_to_tm(s);
     assert(date1.tm_year==date.tm_year);
     assert(date1.tm_mon==date.tm_mon);
